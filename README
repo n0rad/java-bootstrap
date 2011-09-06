@@ -1,0 +1,97 @@
+=====================
+Usage for war : 
+=====================
+- create a project that will manage the cli with this build part :
+<build>
+	<plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-dependency-plugin</artifactId>
+			<version>2.2</version>
+			<executions>
+				<execution>
+					<id>copy-dependencies</id>
+					<phase>prepare-package</phase>
+					<goals>
+						<goal>copy-dependencies</goal>
+					</goals>
+					<configuration>
+						<outputDirectory>${project.build.directory}/classes/META-INF/lib/</outputDirectory>
+					</configuration>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
+</build>
+
+- then in the war project add this dependency : 
+<dependency>
+	<groupId>net.awired.ajsl</groupId>
+	<artifactId>ajsl-bootstrap</artifactId>
+	<version>${ajsl.version}</version>
+	<scope>provided</scope>
+</dependency>
+
+- put your cli manager project as provided too
+
+- then in the build part add : 
+<plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-war-plugin</artifactId>
+	<version>2.1.1</version>
+	<configuration>
+		<archive>
+			<manifest>
+				<mainClass>Bootstrap</mainClass>
+			</manifest>
+			<manifestEntries>
+				<Bundle-MainClass>YOUR MAIN IN CLI PROJECT</Bundle-MainClass>
+			</manifestEntries>
+		</archive>
+	</configuration>
+</plugin>
+<plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-dependency-plugin</artifactId>
+	<version>2.2</version>
+	<executions>
+		<execution>
+			<id>unpack</id>
+			<phase>prepare-package</phase>
+			<goals>
+				<goal>unpack</goal>
+			</goals>
+			<configuration>
+				<artifactItems>
+					<artifactItem>
+						<groupId>net.awired.ajsl</groupId>
+						<artifactId>ajsl-bootstrap</artifactId>
+						<version>${ajsl.version}</version>
+						<overWrite>false</overWrite>
+						<outputDirectory>${project.build.directory}/${project.build.finalName}</outputDirectory>
+					</artifactItem>
+				</artifactItems>
+			</configuration>
+		</execution>
+		<execution>
+			<id>copy</id>
+			<phase>prepare-package</phase>
+			<goals>
+				<goal>copy</goal>
+			</goals>
+			<configuration>
+				<artifactItems>
+					<artifactItem>
+						<groupId>net.awired.visuwall</groupId>
+						<artifactId>visuwall-cli</artifactId>
+						<version>${project.version}</version>
+						<overWrite>false</overWrite>
+						<outputDirectory>${project.build.directory}/${project.build.finalName}/META-INF/lib</outputDirectory>
+					</artifactItem>
+				</artifactItems>
+			</configuration>
+		</execution>
+	</executions>
+</plugin>
+
+Usage in jar :
