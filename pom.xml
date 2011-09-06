@@ -12,6 +12,7 @@
 
 	<groupId>net.awired.boostrap</groupId>
 	<artifactId>bootstrap</artifactId>
+	<version>1.0-SNAPSHOT</version>
 	<name>Awired Bootstrap</name>
 
 </project>
