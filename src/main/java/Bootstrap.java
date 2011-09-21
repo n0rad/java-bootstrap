@@ -145,9 +145,11 @@ public class Bootstrap extends ClassLoader {
 	private Map<String, Class<?>> hmClass;
 	private ProtectionDomain pd;
 
-	
-	private static final Name BUNDLE_MAIN_CLASS = new Name("Bundle-MainClass");
-	
+	private static final Name BOOTSTRAP_MAIN_CLASS = new Name(
+			"Bootstrap-MainClass");
+	private static final Name BOOTSTRAP_CLASSPATH = new Name(
+			"Bootstrap-Classpath");
+
 	public static void main(String[] args) {
 		Bootstrap main = new Bootstrap();
 		try {
@@ -158,15 +160,16 @@ public class Bootstrap extends ClassLoader {
 	}
 
 	public void invokeMain(String[] args) throws Throwable {
-		String realMainClass = getBundleMainClassName();
+		String realMainClass = getManifestBootstrapMainClass();
 		if (realMainClass == null) {
-			System.out.println("main not found in manifest entry : " + BUNDLE_MAIN_CLASS);
+			System.out.println("main not found in manifest entry : "
+					+ BOOTSTRAP_MAIN_CLASS);
 			System.exit(1);
 		}
 		invokeMain(realMainClass, args);
 	}
 
-	private String getBundleMainClassName() {
+	private String getManifestBootstrapMainClass() {
 		Attributes attr = null;
 		if (isLaunchedFromJar()) {
 			try {
@@ -176,10 +179,23 @@ public class Bootstrap extends ClassLoader {
 			} catch (IOException e) {
 			}
 		}
-		return (attr == null ? null : attr.getValue(BUNDLE_MAIN_CLASS));
-	}	
-	
-	
+		return (attr == null ? null : attr.getValue(BOOTSTRAP_MAIN_CLASS));
+	}
+
+	private String[] getManifestBoostrapClassPath() {
+		try {
+			Attributes attr = null;
+			// The first element in array is the top level JAR
+			Manifest m = lstJarFile.get(0).getManifest();
+			attr = m.getMainAttributes();
+			String value = attr.getValue(BOOTSTRAP_CLASSPATH);
+			String[] classPath = value.split(";");
+			return classPath;
+		} catch (Exception e) {
+			return new String[] { "META-INF/lib", "WEB-INF/lib" };
+		}
+	}
+
 	/**
 	 * Default constructor. Defines system class loader as a parent class
 	 * loader.
@@ -227,12 +243,12 @@ public class Bootstrap extends ClassLoader {
 			log("Not a JAR: %s %s", sUrlTopJAR, e.toString());
 			return;
 		}
-//		Runtime.getRuntime().addShutdownHook(new Thread() {
-//			public void run() {
-//				log("shutdown hook started");
-//				shutdown();
-//			}
-//		});
+		// Runtime.getRuntime().addShutdownHook(new Thread() {
+		// public void run() {
+		// log("shutdown hook started");
+		// shutdown();
+		// }
+		// });
 	} // JarClassLoader()
 
 	// --------------------------------separator--------------------------------
@@ -255,8 +271,7 @@ public class Bootstrap extends ClassLoader {
 	 * @return temporary file object presenting JAR entry
 	 * @throws Exception
 	 */
-	private File createTempFile(Map<String, Object> inf)
-			throws Exception {
+	private File createTempFile(Map<String, Object> inf) throws Exception {
 		byte[] a_by = FIgetJarBytes(inf);
 		try {
 			File file = File.createTempFile(FIgetName(inf) + ".", null);
@@ -272,6 +287,16 @@ public class Bootstrap extends ClassLoader {
 		}
 	} // createTempFile()
 
+	private boolean jarEntryStartWith(String[] classpaths, JarEntry je) {
+		String name = je.getName();
+		for (String classpath : classpaths) {
+			if (name.startsWith(classpath)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Loads specified JAR
 	 * 
@@ -283,23 +308,26 @@ public class Bootstrap extends ClassLoader {
 		try {
 			Enumeration<JarEntry> en = jarFile.entries();
 			final String EXT_JAR = ".jar";
+			String[] classpaths = getManifestBoostrapClassPath();
+
 			while (en.hasMoreElements()) {
 				JarEntry je = en.nextElement();
-				if (je.isDirectory() /*|| !je.getName().startsWith("META-INF/runlib")*/) {
+				if (je.isDirectory()
+						|| !jarEntryStartWith(classpaths, je)) {
 					continue;
 				}
-//				System.out.println("load :" + je.getName());
+				// System.out.println("load :" + je.getName());
 				String s = je.getName().toLowerCase(); // JarEntry name
 				if (s.lastIndexOf(EXT_JAR) == s.length() - EXT_JAR.length()) {
 					Map<String, Object> inf = FIbuildJarFileInfo(jarFile, je);
 					File file = createTempFile(inf);
-					log("Loading inner JAR %s from temp file %s", inf.get("jarEntry"),
-							getFilename4Log(file));
+					log("Loading inner JAR %s from temp file %s",
+							inf.get("jarEntry"), getFilename4Log(file));
 					try {
 						loadJar(new JarFile(file));
 					} catch (IOException e) {
-						throw new Exception(
-								"Cannot load inner JAR " + inf.get("jarEntry"), e);
+						throw new Exception("Cannot load inner JAR "
+								+ inf.get("jarEntry"), e);
 					}
 				}
 			}
@@ -377,8 +405,7 @@ public class Bootstrap extends ClassLoader {
 	 * @return loaded class
 	 * @throws Exception
 	 */
-	private Class<?> findJarClass(String sClassName)
-			throws Exception {
+	private Class<?> findJarClass(String sClassName) throws Exception {
 		// http://java.sun.com/developer/onlineTraining/Security/Fundamentals
 		// /magercises/ClassLoader/solution/FileClassLoader.java
 		Class<?> c = hmClass.get(sClassName);
@@ -424,7 +451,8 @@ public class Bootstrap extends ClassLoader {
 		if (getPackage(sPackageName) == null) {
 			definePackage(sPackageName, FIgetSpecificationTitle(inf),
 					FIgetSpecificationVersion(inf),
-					FIgetSpecificationVendor(inf), FIgetImplementationTitle(inf),
+					FIgetSpecificationVendor(inf),
+					FIgetImplementationTitle(inf),
 					FIgetImplementationVersion(inf),
 					FIgetImplementationVendor(inf), FIgetSealURL(inf));
 		}
@@ -578,8 +606,11 @@ public class Bootstrap extends ClassLoader {
 	 *             <p>
 	 *             (3) Actual cause of InvocationTargetException
 	 * 
-	 *             See http://java.sun.com/developer/Books/javaprogramming/JAR/api/jarclassloader.html
-	 *             and http://java.sun.com/developer/Books/javaprogramming/JAR/api/example-1dot2/JarClassLoader.java
+	 *             See
+	 *             http://java.sun.com/developer/Books/javaprogramming/JAR/api
+	 *             /jarclassloader.html and
+	 *             http://java.sun.com/developer/Books/javaprogramming
+	 *             /JAR/api/example-1dot2/JarClassLoader.java
 	 */
 	public void invokeMain(String sClass, String[] args) throws Throwable {
 		// The default is sun.misc.Launcher$AppClassLoader (run from file system
@@ -754,7 +785,6 @@ public class Bootstrap extends ClassLoader {
 		}
 	} // log()
 
-
 	Map<String, Object> FIbuildJarFileInfo(JarFile jarFile, JarEntry jarEntry) {
 		Map<String, Object> fi = new HashMap<String, Object>();
 		fi.put("jarFile", jarFile);
@@ -769,43 +799,52 @@ public class Bootstrap extends ClassLoader {
 
 	URL FIgetURL(Map<String, Object> jarFileInfo) {
 		try {
-			return new URL("jar:file:" + ((JarFile)jarFileInfo.get("jarFile")).getName() + "!/"
-					+  ((JarEntry)jarFileInfo.get("jarEntry")));
+			return new URL("jar:file:"
+					+ ((JarFile) jarFileInfo.get("jarFile")).getName() + "!/"
+					+ ((JarEntry) jarFileInfo.get("jarEntry")));
 		} catch (MalformedURLException e) {
 			return null;
 		}
 	}
 
 	String FIgetName(Map<String, Object> jarFileInfo) {
-		return ((JarEntry)jarFileInfo.get("jarEntry")).getName().replace('/', '_');
+		return ((JarEntry) jarFileInfo.get("jarEntry")).getName().replace('/',
+				'_');
 	}
 
 	String FIgetSpecificationTitle(Map<String, Object> jarFileInfo) {
-		return ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.SPECIFICATION_TITLE);
+		return ((Manifest) jarFileInfo.get("mf")).getMainAttributes().getValue(
+				Name.SPECIFICATION_TITLE);
 	}
 
 	String FIgetSpecificationVersion(Map<String, Object> jarFileInfo) {
-		return ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.SPECIFICATION_VERSION);
+		return ((Manifest) jarFileInfo.get("mf")).getMainAttributes().getValue(
+				Name.SPECIFICATION_VERSION);
 	}
 
 	String FIgetSpecificationVendor(Map<String, Object> jarFileInfo) {
-		return ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.SPECIFICATION_VENDOR);
+		return ((Manifest) jarFileInfo.get("mf")).getMainAttributes().getValue(
+				Name.SPECIFICATION_VENDOR);
 	}
 
 	String FIgetImplementationTitle(Map<String, Object> jarFileInfo) {
-		return ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.IMPLEMENTATION_TITLE);
+		return ((Manifest) jarFileInfo.get("mf")).getMainAttributes().getValue(
+				Name.IMPLEMENTATION_TITLE);
 	}
 
 	String FIgetImplementationVersion(Map<String, Object> jarFileInfo) {
-		return ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.IMPLEMENTATION_VERSION);
+		return ((Manifest) jarFileInfo.get("mf")).getMainAttributes().getValue(
+				Name.IMPLEMENTATION_VERSION);
 	}
 
 	String FIgetImplementationVendor(Map<String, Object> jarFileInfo) {
-		return ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.IMPLEMENTATION_VENDOR);
+		return ((Manifest) jarFileInfo.get("mf")).getMainAttributes().getValue(
+				Name.IMPLEMENTATION_VENDOR);
 	}
 
 	URL FIgetSealURL(Map<String, Object> jarFileInfo) {
-		String seal = ((Manifest)jarFileInfo.get("mf")).getMainAttributes().getValue(Name.SEALED);
+		String seal = ((Manifest) jarFileInfo.get("mf")).getMainAttributes()
+				.getValue(Name.SEALED);
 		if (seal != null)
 			try {
 				return new URL(seal);
@@ -819,13 +858,14 @@ public class Bootstrap extends ClassLoader {
 		DataInputStream dis = null;
 		byte[] a_by = null;
 		try {
-			long lSize = ((JarEntry)jarFileInfo.get("jarEntry")).getSize();
+			long lSize = ((JarEntry) jarFileInfo.get("jarEntry")).getSize();
 			if (lSize <= 0 || lSize >= Integer.MAX_VALUE) {
-				throw new Exception("Invalid size " + lSize
-						+ " for entry " + ((JarEntry)jarFileInfo.get("jarEntry")));
+				throw new Exception("Invalid size " + lSize + " for entry "
+						+ ((JarEntry) jarFileInfo.get("jarEntry")));
 			}
 			a_by = new byte[(int) lSize];
-			InputStream is = ((JarFile)jarFileInfo.get("jarFile")).getInputStream(((JarEntry)jarFileInfo.get("jarEntry")));
+			InputStream is = ((JarFile) jarFileInfo.get("jarFile"))
+					.getInputStream(((JarEntry) jarFileInfo.get("jarEntry")));
 			dis = new DataInputStream(is);
 			dis.readFully(a_by);
 		} catch (IOException e) {
@@ -840,115 +880,115 @@ public class Bootstrap extends ClassLoader {
 		}
 		return a_by;
 	} // getJarBytes()
-	
-	
-//	/**
-//	 * Inner class with JAR entry information. Keeps JAR file and entry object.
-//	 */
-//	private static class Map<String, Object> {
-//		JarFile jarFile;
-//		JarEntry jarEntry;
-//		Manifest mf; // required for package creation
-//
-//		Map<String, Object>(JarFile jarFile, JarEntry jarEntry) {
-//			this.jarFile = jarFile;
-//			this.jarEntry = jarEntry;
-//			try {
-//				this.mf = jarFile.getManifest();
-//			} catch (IOException e) {
-//				// Manifest does not exist or not available
-//				this.mf = new Manifest();
-//			}
-//		}
-//
-//		URL getURL() {
-//			try {
-//				return new URL("jar:file:" + jarFile.getName() + "!/"
-//						+ jarEntry);
-//			} catch (MalformedURLException e) {
-//				return null;
-//			}
-//		}
-//
-//		String getName() {
-//			return jarEntry.getName().replace('/', '_');
-//		}
-//
-//		String getSpecificationTitle() {
-//			return mf.getMainAttributes().getValue(Name.SPECIFICATION_TITLE);
-//		}
-//
-//		String getSpecificationVersion() {
-//			return mf.getMainAttributes().getValue(Name.SPECIFICATION_VERSION);
-//		}
-//
-//		String getSpecificationVendor() {
-//			return mf.getMainAttributes().getValue(Name.SPECIFICATION_VENDOR);
-//		}
-//
-//		String getImplementationTitle() {
-//			return mf.getMainAttributes().getValue(Name.IMPLEMENTATION_TITLE);
-//		}
-//
-//		String getImplementationVersion() {
-//			return mf.getMainAttributes().getValue(Name.IMPLEMENTATION_VERSION);
-//		}
-//
-//		String getImplementationVendor() {
-//			return mf.getMainAttributes().getValue(Name.IMPLEMENTATION_VENDOR);
-//		}
-//
-//		URL getSealURL() {
-//			String seal = mf.getMainAttributes().getValue(Name.SEALED);
-//			if (seal != null)
-//				try {
-//					return new URL(seal);
-//				} catch (MalformedURLException e) {
-//					// Ignore, will return null
-//				}
-//			return null;
-//		}
-//
-//		@Override
-//		public String toString() {
-//			return "JAR: " + jarFile.getName() + " ENTRY: " + jarEntry;
-//		}
-//
-//		/**
-//		 * Read JAR entry and returns byte array of this JAR entry. This is a
-//		 * helper method to load JAR entry into temporary file.
-//		 * 
-//		 * @param inf
-//		 *            JAR entry information object
-//		 * @return byte array for the specified JAR entry
-//		 * @throws Exception
-//		 */
-//		byte[] getJarBytes() throws Exception {
-//			DataInputStream dis = null;
-//			byte[] a_by = null;
-//			try {
-//				long lSize = jarEntry.getSize();
-//				if (lSize <= 0 || lSize >= Integer.MAX_VALUE) {
-//					throw new Exception("Invalid size " + lSize
-//							+ " for entry " + jarEntry);
-//				}
-//				a_by = new byte[(int) lSize];
-//				InputStream is = jarFile.getInputStream(jarEntry);
-//				dis = new DataInputStream(is);
-//				dis.readFully(a_by);
-//			} catch (IOException e) {
-//				throw new Exception(null, e);
-//			} finally {
-//				if (dis != null) {
-//					try {
-//						dis.close();
-//					} catch (IOException e) {
-//					}
-//				}
-//			}
-//			return a_by;
-//		} // getJarBytes()
-//
-//	} // inner class Map<String, Object>
+
+	// /**
+	// * Inner class with JAR entry information. Keeps JAR file and entry
+	// object.
+	// */
+	// private static class Map<String, Object> {
+	// JarFile jarFile;
+	// JarEntry jarEntry;
+	// Manifest mf; // required for package creation
+	//
+	// Map<String, Object>(JarFile jarFile, JarEntry jarEntry) {
+	// this.jarFile = jarFile;
+	// this.jarEntry = jarEntry;
+	// try {
+	// this.mf = jarFile.getManifest();
+	// } catch (IOException e) {
+	// // Manifest does not exist or not available
+	// this.mf = new Manifest();
+	// }
+	// }
+	//
+	// URL getURL() {
+	// try {
+	// return new URL("jar:file:" + jarFile.getName() + "!/"
+	// + jarEntry);
+	// } catch (MalformedURLException e) {
+	// return null;
+	// }
+	// }
+	//
+	// String getName() {
+	// return jarEntry.getName().replace('/', '_');
+	// }
+	//
+	// String getSpecificationTitle() {
+	// return mf.getMainAttributes().getValue(Name.SPECIFICATION_TITLE);
+	// }
+	//
+	// String getSpecificationVersion() {
+	// return mf.getMainAttributes().getValue(Name.SPECIFICATION_VERSION);
+	// }
+	//
+	// String getSpecificationVendor() {
+	// return mf.getMainAttributes().getValue(Name.SPECIFICATION_VENDOR);
+	// }
+	//
+	// String getImplementationTitle() {
+	// return mf.getMainAttributes().getValue(Name.IMPLEMENTATION_TITLE);
+	// }
+	//
+	// String getImplementationVersion() {
+	// return mf.getMainAttributes().getValue(Name.IMPLEMENTATION_VERSION);
+	// }
+	//
+	// String getImplementationVendor() {
+	// return mf.getMainAttributes().getValue(Name.IMPLEMENTATION_VENDOR);
+	// }
+	//
+	// URL getSealURL() {
+	// String seal = mf.getMainAttributes().getValue(Name.SEALED);
+	// if (seal != null)
+	// try {
+	// return new URL(seal);
+	// } catch (MalformedURLException e) {
+	// // Ignore, will return null
+	// }
+	// return null;
+	// }
+	//
+	// @Override
+	// public String toString() {
+	// return "JAR: " + jarFile.getName() + " ENTRY: " + jarEntry;
+	// }
+	//
+	// /**
+	// * Read JAR entry and returns byte array of this JAR entry. This is a
+	// * helper method to load JAR entry into temporary file.
+	// *
+	// * @param inf
+	// * JAR entry information object
+	// * @return byte array for the specified JAR entry
+	// * @throws Exception
+	// */
+	// byte[] getJarBytes() throws Exception {
+	// DataInputStream dis = null;
+	// byte[] a_by = null;
+	// try {
+	// long lSize = jarEntry.getSize();
+	// if (lSize <= 0 || lSize >= Integer.MAX_VALUE) {
+	// throw new Exception("Invalid size " + lSize
+	// + " for entry " + jarEntry);
+	// }
+	// a_by = new byte[(int) lSize];
+	// InputStream is = jarFile.getInputStream(jarEntry);
+	// dis = new DataInputStream(is);
+	// dis.readFully(a_by);
+	// } catch (IOException e) {
+	// throw new Exception(null, e);
+	// } finally {
+	// if (dis != null) {
+	// try {
+	// dis.close();
+	// } catch (IOException e) {
+	// }
+	// }
+	// }
+	// return a_by;
+	// } // getJarBytes()
+	//
+	// } // inner class Map<String, Object>
 
 } // class JarClassLoader
