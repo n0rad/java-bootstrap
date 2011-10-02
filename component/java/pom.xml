@@ -11,41 +11,15 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>net.awired.bootstrap</groupId>
-	<artifactId>bootstrap</artifactId>
-	<version>1.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	<name>Awired Bootstrap</name>
-	<description>Bootstrap for applications</description>
-	<url>https://github.com/awired/bootstrap</url>
+	<artifactId>bootstrap-java</artifactId>
+	<name>Awired Bootstrap - Java</name>
+	<description>Bootstrap for Java</description>
 
 	<parent>
-		<groupId>net.awired.parent.parent-java</groupId>
-		<artifactId>parent-java-bundle</artifactId>
-		<version>1.12-SNAPSHOT</version>
+		<groupId>net.awired.bootstrap</groupId>
+		<artifactId>bootstrap</artifactId>
+		<version>1.0-SNAPSHOT</version>
+		<relativePath>../../</relativePath>
 	</parent>
-
-
-	<modules>
-		<module>component/java</module>
-		<module>component/karaf</module>
-	</modules>
-
-	<developers>
-		<developer>
-			<id>n0rad</id>
-			<name>Arnaud LEMAIRE</name>
-			<email>dev@norad.fr</email>
-		</developer>
-	</developers>
-
-	<licenses>
-		<license>
-			<name>Apache 2</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-			<distribution>repo</distribution>
-			<comments>Apache License Version 2.0</comments>
-		</license>
-	</licenses>
 
 </project>

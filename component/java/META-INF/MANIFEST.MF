@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Built-By: n0
+Tool: Bnd-1.43.0
+Bundle-Name: Awired Bootstrap - Java
+Created-By: Apache Maven Bundle Plugin
+Bundle-Vendor: Awired Network
+Build-Jdk: 1.6.0_26
+Bundle-Version: 1.0.0.SNAPSHOT
+Bnd-LastModified: 1317591918218
+Bundle-ManifestVersion: 2
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-Description: Bootstrap for Java
+Bundle-DocURL: http://awired.net/
+Bundle-SymbolicName: net.awired.bootstrap.java
+
