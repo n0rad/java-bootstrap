@@ -5,12 +5,8 @@ import java.util.Properties;
 import javax.servlet.ServletContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KarafService {
-
-    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     // conf
     private String karafRoot;
@@ -93,21 +89,23 @@ public class KarafService {
 
         main.setAdditionalProperties(p);
 
-        LOG.info("Starting Karaf with root : " + karafRoot + " and home : " + karafHome);
+        System.out.println("Starting Karaf with root : " + karafRoot + " and home : " + karafHome);
         try {
             main.launch();
             osgi = main.getFramework();
         } catch (Exception e) {
-            LOG.error("Cannot start karaf container", e);
+            System.err.println("Cannot start karaf container");
+            e.printStackTrace();
         }
     }
 
     public void stop() {
-        LOG.info("Shutting down karaf");
+        System.out.println("Shutting down karaf");
         try {
             main.destroy();
         } catch (Exception e) {
-            LOG.warn("Problem when shutting down karaf", e);
+            System.err.println("Problem when shutting down karaf");
+            e.printStackTrace();
         }
     }
 

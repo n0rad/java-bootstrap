@@ -24,14 +24,23 @@
 
 	<properties>
 		<karaf.version>2.2.2</karaf.version>
+		<felix.version>2.2.0</felix.version>
 	</properties>
 
 	<dependencies>
+	
 		<dependency>
 			<groupId>org.apache.felix</groupId>
-			<artifactId>org.apache.felix.main</artifactId>
-			<version>3.2.2</version>
+			<artifactId>org.apache.felix.http.proxy</artifactId>
+			<version>${felix.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.compendium</artifactId>
+			<version>4.2.0</version>
+		</dependency>
+	
+	
 		<dependency>
 			<groupId>org.apache.karaf</groupId>
 			<artifactId>org.apache.karaf.main</artifactId>
