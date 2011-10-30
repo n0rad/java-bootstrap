@@ -22,13 +22,19 @@
 	<parent>
 		<groupId>net.awired.parent.parent-java</groupId>
 		<artifactId>parent-java-bundle</artifactId>
-		<version>1.12-SNAPSHOT</version>
+		<version>1.13</version>
 	</parent>
 
 
 	<modules>
 		<module>component/java</module>
 		<module>component/karaf</module>
+
+		
+		<module>sample/jar-sample</module>
+		<module>sample/war-sample</module>
+		<module>sample/osgi-sample</module>
+		<module>sample/karaf-sample</module>
 	</modules>
 
 	<developers>
