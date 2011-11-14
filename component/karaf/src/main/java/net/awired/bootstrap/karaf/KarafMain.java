@@ -34,7 +34,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.karaf.main.BootstrapLogManager;
 import org.apache.karaf.main.Lock;
 import org.apache.karaf.main.Main;
@@ -74,22 +73,22 @@ public class KarafMain {
      */
     public static final String PROPERTY_AUTO_START = "karaf.auto.start";
     /**
-     * The system property for specifying the Karaf home directory.  The home directory
+     * The system property for specifying the Karaf home directory. The home directory
      * hold the binary install of Karaf.
      */
     public static final String PROP_KARAF_HOME = "karaf.home";
     /**
-     * The environment variable for specifying the Karaf home directory.  The home directory
+     * The environment variable for specifying the Karaf home directory. The home directory
      * hold the binary install of Karaf.
      */
     public static final String ENV_KARAF_HOME = "KARAF_HOME";
     /**
-     * The system property for specifying the Karaf base directory.  The base directory
+     * The system property for specifying the Karaf base directory. The base directory
      * holds the configuration and data for a Karaf instance.
      */
     public static final String PROP_KARAF_BASE = "karaf.base";
     /**
-     * The environment variable for specifying the Karaf base directory.  The base directory
+     * The environment variable for specifying the Karaf base directory. The base directory
      * holds the configuration and data for a Karaf instance.
      */
     public static final String ENV_KARAF_BASE = "KARAF_BASE";
@@ -143,7 +142,7 @@ public class KarafMain {
     public static final String PROPERTY_LOCK_LEVEL = "karaf.lock.level";
 
     public static final String DEFAULT_REPO = "karaf.default.repository";
-    
+
     public static final String KARAF_FRAMEWORK = "karaf.framework";
 
     public static final String KARAF_FRAMEWORK_FACTORY = "karaf.framework.factory";
@@ -165,7 +164,7 @@ public class KarafMain {
     public static final String PROPERTY_LOCK_CLASS_DEFAULT = SimpleFileLock.class.getName();
 
     public static final String INCLUDES_PROPERTY = "${includes}";
-    
+
     Logger LOG = Logger.getLogger(this.getClass().getName());
 
     private File karafHome;
@@ -196,8 +195,10 @@ public class KarafMain {
     public void launch() throws Exception {
         karafHome = Utils.getKarafHome();
         karafBase = Utils.getKarafDirectory(Main.PROP_KARAF_BASE, Main.ENV_KARAF_BASE, karafHome, false, true);
-        karafData = Utils.getKarafDirectory(Main.PROP_KARAF_DATA, Main.ENV_KARAF_DATA, new File(karafBase, "data"), true, true);
-        karafInstances = Utils.getKarafDirectory(Main.PROP_KARAF_INSTANCES, Main.ENV_KARAF_INSTANCES, new File(karafHome, "instances"), false, false);
+        karafData = Utils.getKarafDirectory(Main.PROP_KARAF_DATA, Main.ENV_KARAF_DATA, new File(karafBase, "data"),
+                true, true);
+        karafInstances = Utils.getKarafDirectory(Main.PROP_KARAF_INSTANCES, Main.ENV_KARAF_INSTANCES, new File(
+                karafHome, "instances"), false, false);
 
         Package p = Package.getPackage("org.apache.karaf.main");
         if (p != null && p.getImplementationVersion() != null) {
@@ -217,7 +218,7 @@ public class KarafMain {
         configProps = loadConfigProperties();
         BootstrapLogManager.setProperties(configProps);
         LOG.addHandler(BootstrapLogManager.getDefaultHandler());
-        
+
         // Copy framework properties from the system properties.
         KarafMain.copySystemProperties(configProps);
 
@@ -230,16 +231,18 @@ public class KarafMain {
             try {
                 storage.mkdirs();
             } catch (SecurityException se) {
-                throw new Exception(se.getMessage()); 
+                throw new Exception(se.getMessage());
             }
             configProps.setProperty(Constants.FRAMEWORK_STORAGE, storage.getAbsolutePath());
         }
-        
+
         defaultStartLevel = Integer.parseInt(configProps.getProperty(Constants.FRAMEWORK_BEGINNING_STARTLEVEL));
-        lockStartLevel = Integer.parseInt(configProps.getProperty(PROPERTY_LOCK_LEVEL, Integer.toString(lockStartLevel)));
+        lockStartLevel = Integer.parseInt(configProps.getProperty(PROPERTY_LOCK_LEVEL,
+                Integer.toString(lockStartLevel)));
         lockDelay = Integer.parseInt(configProps.getProperty(PROPERTY_LOCK_DELAY, Integer.toString(lockDelay)));
         configProps.setProperty(Constants.FRAMEWORK_BEGINNING_STARTLEVEL, Integer.toString(lockStartLevel));
-        shutdownTimeout = Integer.parseInt(configProps.getProperty(KARAF_SHUTDOWN_TIMEOUT, Integer.toString(shutdownTimeout)));
+        shutdownTimeout = Integer.parseInt(configProps.getProperty(KARAF_SHUTDOWN_TIMEOUT,
+                Integer.toString(shutdownTimeout)));
         // Start up the OSGI framework
 
         String factoryClass = configProps.getProperty(KARAF_FRAMEWORK_FACTORY);
@@ -249,11 +252,11 @@ public class KarafMain {
             factoryClass = br.readLine();
             br.close();
         }
-        
+
         if (additionalProperties != null) {
-        	configProps.putAll(additionalProperties);
+            configProps.putAll(additionalProperties);
         }
-        
+
         FrameworkFactory factory = (FrameworkFactory) classLoader.loadClass(factoryClass).newInstance();
         framework = factory.newFramework(new StringMap(configProps, false));
         framework.init();
@@ -263,6 +266,7 @@ public class KarafMain {
         framework.start();
         // Start lock monitor
         new Thread() {
+            @Override
             public void run() {
                 lock(configProps);
             }
@@ -281,7 +285,7 @@ public class KarafMain {
         }
     }
 
-	public boolean destroy() throws Exception {
+    public boolean destroy() throws Exception {
         if (framework == null) {
             return true;
         }
@@ -297,6 +301,7 @@ public class KarafMain {
             exiting = true;
             if (framework.getState() == Bundle.ACTIVE || framework.getState() == Bundle.STARTING) {
                 new Thread() {
+                    @Override
                     public void run() {
                         try {
                             framework.stop();
@@ -329,80 +334,54 @@ public class KarafMain {
 
     /**
      * <p>
-     * This method performs the main task of constructing an framework instance
-     * and starting its execution. The following functions are performed
-     * when invoked:
+     * This method performs the main task of constructing an framework instance and starting its execution. The
+     * following functions are performed when invoked:
      * </p>
      * <ol>
-     *   <li><i><b>Read the system properties file.<b></i> This is a file
-     *       containing properties to be pushed into <tt>System.setProperty()</tt>
-     *       before starting the framework. This mechanism is mainly shorthand
-     *       for people starting the framework from the command line to avoid having
-     *       to specify a bunch of <tt>-D</tt> system property definitions.
-     *       The only properties defined in this file that will impact the framework's
-     *       behavior are the those concerning setting HTTP proxies, such as
-     *       <tt>http.proxyHost</tt>, <tt>http.proxyPort</tt>, and
-     *       <tt>http.proxyAuth</tt>.
-     *   </li>
-     *   <li><i><b>Perform system property variable substitution on system
-     *       properties.</b></i> Any system properties in the system property
-     *       file whose value adheres to <tt>${&lt;system-prop-name&gt;}</tt>
-     *       syntax will have their value substituted with the appropriate
-     *       system property value.
-     *   </li>
-     *   <li><i><b>Read the framework's configuration property file.</b></i> This is
-     *       a file containing properties used to configure the framework
-     *       instance and to pass configuration information into
-     *       bundles installed into the framework instance. The configuration
-     *       property file is called <tt>config.properties</tt> by default
-     *       and is located in the <tt>conf/</tt> directory of the Felix
-     *       installation directory, which is the parent directory of the
-     *       directory containing the <tt>felix.jar</tt> file. It is possible
-     *       to use a different location for the property file by specifying
-     *       the desired URL using the <tt>felix.config.properties</tt>
-     *       system property; this should be set using the <tt>-D</tt> syntax
-     *       when executing the JVM. Refer to the
-     *       <a href="Felix.html#Felix(java.util.Map, java.util.List)">
-     *       <tt>Felix</tt></a> constructor documentation for more
-     *       information on the framework configuration options.
-     *   </li>
-     *   <li><i><b>Perform system property variable substitution on configuration
-     *       properties.</b></i> Any configuration properties whose value adheres to
-     *       <tt>${&lt;system-prop-name&gt;}</tt> syntax will have their value
-     *       substituted with the appropriate system property value.
-     *   </li>
-     *   <li><i><b>Ensure the default bundle cache has sufficient information to
-     *       initialize.</b></i> The default implementation of the bundle cache
-     *       requires either a profile name or a profile directory in order to
-     *       start. The configuration properties are checked for at least one
-     *       of the <tt>felix.cache.profile</tt> or <tt>felix.cache.profiledir</tt>
-     *       properties. If neither is found, the user is asked to supply a profile
-     *       name that is added to the configuration property set. See the
-     *       <a href="cache/DefaultBundleCache.html"><tt>DefaultBundleCache</tt></a>
-     *       documentation for more details its configuration options.
-     *   </li>
-     *   <li><i><b>Creates and starts a framework instance.</b></i> A
-     *       case insensitive
-     *       <a href="util/StringMap.html"><tt>StringMap</tt></a>
-     *       is created for the configuration property file and is passed
-     *       into the framework.
-     *   </li>
+     * <li><i><b>Read the system properties file.<b></i> This is a file containing properties to be pushed into
+     * <tt>System.setProperty()</tt> before starting the framework. This mechanism is mainly shorthand for people
+     * starting the framework from the command line to avoid having to specify a bunch of <tt>-D</tt> system property
+     * definitions. The only properties defined in this file that will impact the framework's behavior are the those
+     * concerning setting HTTP proxies, such as <tt>http.proxyHost</tt>, <tt>http.proxyPort</tt>, and
+     * <tt>http.proxyAuth</tt>.</li>
+     * <li><i><b>Perform system property variable substitution on system properties.</b></i> Any system properties in
+     * the system property file whose value adheres to <tt>${&lt;system-prop-name&gt;}</tt> syntax will have their
+     * value substituted with the appropriate system property value.</li>
+     * <li><i><b>Read the framework's configuration property file.</b></i> This is a file containing properties used to
+     * configure the framework instance and to pass configuration information into bundles installed into the framework
+     * instance. The configuration property file is called <tt>config.properties</tt> by default and is located in the
+     * <tt>conf/</tt> directory of the Felix installation directory, which is the parent directory of the directory
+     * containing the <tt>felix.jar</tt> file. It is possible to use a different location for the property file by
+     * specifying the desired URL using the <tt>felix.config.properties</tt> system property; this should be set using
+     * the <tt>-D</tt> syntax when executing the JVM. Refer to the <a
+     * href="Felix.html#Felix(java.util.Map, java.util.List)"> <tt>Felix</tt></a> constructor documentation for more
+     * information on the framework configuration options.</li>
+     * <li><i><b>Perform system property variable substitution on configuration properties.</b></i> Any configuration
+     * properties whose value adheres to <tt>${&lt;system-prop-name&gt;}</tt> syntax will have their value substituted
+     * with the appropriate system property value.</li>
+     * <li><i><b>Ensure the default bundle cache has sufficient information to initialize.</b></i> The default
+     * implementation of the bundle cache requires either a profile name or a profile directory in order to start. The
+     * configuration properties are checked for at least one of the <tt>felix.cache.profile</tt> or
+     * <tt>felix.cache.profiledir</tt> properties. If neither is found, the user is asked to supply a profile name that
+     * is added to the configuration property set. See the <a href="cache/DefaultBundleCache.html">
+     * <tt>DefaultBundleCache</tt></a> documentation for more details its configuration options.</li>
+     * <li><i><b>Creates and starts a framework instance.</b></i> A case insensitive <a href="util/StringMap.html">
+     * <tt>StringMap</tt></a> is created for the configuration property file and is passed into the framework.</li>
      * </ol>
      * <p>
-     * It should be noted that simply starting an instance of the framework is not enough
-     * to create an interactive session with it. It is necessary to install
-     * and start bundles that provide an interactive impl; this is generally
-     * done by specifying an "auto-start" property in the framework configuration
-     * property file. If no interactive impl bundles are installed or if
-     * the configuration property file cannot be found, the framework will appear to
-     * be hung or deadlocked. This is not the case, it is executing correctly,
-     * there is just no way to interact with it. Refer to the
-     * <a href="Felix.html#Felix(java.util.Map, java.util.List)">
-     * <tt>Felix</tt></a> constructor documentation for more information on
-     * framework configuration options.
+     * It should be noted that simply starting an instance of the framework is not enough to create an interactive
+     * session with it. It is necessary to install and start bundles that provide an interactive impl; this is
+     * generally done by specifying an "auto-start" property in the framework configuration property file. If no
+     * interactive impl bundles are installed or if the configuration property file cannot be found, the framework will
+     * appear to be hung or deadlocked. This is not the case, it is executing correctly, there is just no way to
+     * interact with it. Refer to the <a href="Felix.html#Felix(java.util.Map, java.util.List)"> <tt>Felix</tt></a>
+     * constructor documentation for more information on framework configuration options.
      * </p>
-     * @param args An array of arguments, all of which are ignored.
-     * @throws Exception If an error occurs.
+     * 
+     * @param args
+     *            An array of arguments, all of which are ignored.
+     * @throws Exception
+     *             If an error occurs.
      **/
     public static void main(String[] args) throws Exception {
         while (true) {
@@ -410,8 +389,10 @@ public class KarafMain {
             System.setProperty("karaf.restart", "false");
             if (Boolean.getBoolean("karaf.restart.clean")) {
                 File karafHome = Utils.getKarafHome();
-                File karafBase = Utils.getKarafDirectory(Main.PROP_KARAF_BASE, Main.ENV_KARAF_BASE, karafHome, false, true);
-                File karafData = Utils.getKarafDirectory(Main.PROP_KARAF_DATA, Main.ENV_KARAF_DATA, new File(karafBase, "data"), true, true);
+                File karafBase = Utils.getKarafDirectory(Main.PROP_KARAF_BASE, Main.ENV_KARAF_BASE, karafHome, false,
+                        true);
+                File karafData = Utils.getKarafDirectory(Main.PROP_KARAF_DATA, Main.ENV_KARAF_DATA, new File(
+                        karafBase, "data"), true, true);
                 Utils.deleteDirectory(karafData);
             }
             final Main main = new Main(args);
@@ -472,14 +453,14 @@ public class KarafMain {
             if (pid.indexOf('@') > 0) {
                 pid = pid.substring(0, pid.indexOf('@'));
             }
-            
+
             boolean isRoot = karafHome.equals(karafBase);
-            
+
             if (instanceName != null) {
                 String storage = System.getProperty("karaf.instances");
                 if (storage == null) {
-                    throw new Exception("System property 'karaf.instances' is not set. \n" +
-                        "This property needs to be set to the full path of the instance.properties file.");
+                    throw new Exception("System property 'karaf.instances' is not set. \n"
+                            + "This property needs to be set to the full path of the instance.properties file.");
                 }
                 File storageFile = new File(storage);
                 File propertiesFile = new File(storageFile, "instance.properties");
@@ -502,7 +483,7 @@ public class KarafMain {
                     fis.close();
                     if (!isRoot) {
                         throw new Exception("Instance " + instanceName + " not found");
-                    } 
+                    }
                 } else if (isRoot) {
                     if (!propertiesFile.getParentFile().exists()) {
                         try {
@@ -528,19 +509,20 @@ public class KarafMain {
 
     /**
      * <p/>
-     * Processes the auto-install and auto-start properties from the
-     * specified configuration properties.
-     *
-     * @param context the system bundle context
+     * Processes the auto-install and auto-start properties from the specified configuration properties.
+     * 
+     * @param context
+     *            the system bundle context
      */
     private void processAutoProperties(BundleContext context) {
         // Check if we want to convert URLs to maven style
-        boolean convertToMavenUrls = Boolean.parseBoolean(configProps.getProperty(PROPERTY_CONVERT_TO_MAVEN_URL, "true"));
+        boolean convertToMavenUrls = Boolean.parseBoolean(configProps.getProperty(PROPERTY_CONVERT_TO_MAVEN_URL,
+                "true"));
 
         // Retrieve the Start Level service, since it will be needed
         // to set the start level of the installed bundles.
-        StartLevel sl = (StartLevel) context.getService(
-                context.getServiceReference(org.osgi.service.startlevel.StartLevel.class.getName()));
+        StartLevel sl = (StartLevel) context.getService(context
+                .getServiceReference(org.osgi.service.startlevel.StartLevel.class.getName()));
 
         // Set the default bundle start level
         int ibsl = 60;
@@ -573,7 +555,8 @@ public class KarafMain {
         }
     }
 
-    private List<Bundle> autoInstall(String propertyPrefix, BundleContext context, StartLevel sl, boolean convertToMavenUrls, boolean start) {
+    private List<Bundle> autoInstall(String propertyPrefix, BundleContext context, StartLevel sl,
+            boolean convertToMavenUrls, boolean start) {
         Map<Integer, String> autoStart = new TreeMap<Integer, String>();
         List<Bundle> bundles = new ArrayList<Bundle>();
         for (Object o : configProps.keySet()) {
@@ -607,13 +590,11 @@ public class KarafMain {
                             Bundle b = context.installBundle(parts[0], new URL(parts[1]).openStream());
                             sl.setBundleStartLevel(b, startLevel);
                             bundles.add(b);
-                        }
-                        catch (Exception ex) {
+                        } catch (Exception ex) {
                             System.err.println("Error installing bundle  " + location + ": " + ex);
                         }
                     }
-                }
-                while (location != null);
+                } while (location != null);
             }
         }
         // Now loop through and start the installed bundles.
@@ -624,8 +605,7 @@ public class KarafMain {
                     if (fragmentHostHeader == null || fragmentHostHeader.trim().length() == 0) {
                         b.start();
                     }
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     System.err.println("Error starting bundle " + b.getSymbolicName() + ": " + ex);
                 }
             }
@@ -637,19 +617,20 @@ public class KarafMain {
         String[] parts = location.split("\\|");
         if (convertToMavenUrls) {
             String[] p = parts[1].split("/");
-            if (p.length >= 4 && p[p.length-1].startsWith(p[p.length-3] + "-" + p[p.length-2])) {
-                String artifactId = p[p.length-3];
-                String version = p[p.length-2];
+            if (p.length >= 4 && p[p.length - 1].startsWith(p[p.length - 3] + "-" + p[p.length - 2])) {
+                String artifactId = p[p.length - 3];
+                String version = p[p.length - 2];
                 String classifier;
                 String type;
                 String artifactIdVersion = artifactId + "-" + version;
                 StringBuffer sb = new StringBuffer();
-                if (p[p.length-1].charAt(artifactIdVersion.length()) == '-') {
-                    classifier = p[p.length-1].substring(artifactIdVersion.length() + 1, p[p.length-1].lastIndexOf('.'));
+                if (p[p.length - 1].charAt(artifactIdVersion.length()) == '-') {
+                    classifier = p[p.length - 1].substring(artifactIdVersion.length() + 1,
+                            p[p.length - 1].lastIndexOf('.'));
                 } else {
                     classifier = null;
                 }
-                type = p[p.length-1].substring(p[p.length-1].lastIndexOf('.') + 1);
+                type = p[p.length - 1].substring(p[p.length - 1].lastIndexOf('.') + 1);
                 sb.append("mvn:");
                 for (int j = 0; j < p.length - 3; j++) {
                     if (j > 0) {
@@ -723,19 +704,17 @@ public class KarafMain {
 
     /**
      * <p>
-     * Loads the properties in the system property file associated with the
-     * framework installation into <tt>System.setProperty()</tt>. These properties
-     * are not directly used by the framework in anyway. By default, the system
-     * property file is located in the <tt>conf/</tt> directory of the Felix
-     * installation directory and is called "<tt>system.properties</tt>". The
-     * installation directory of Felix is assumed to be the parent directory of
-     * the <tt>felix.jar</tt> file as found on the system class path property.
-     * The precise file from which to load system properties can be set by
-     * initializing the "<tt>felix.system.properties</tt>" system property to an
+     * Loads the properties in the system property file associated with the framework installation into
+     * <tt>System.setProperty()</tt>. These properties are not directly used by the framework in anyway. By default,
+     * the system property file is located in the <tt>conf/</tt> directory of the Felix installation directory and is
+     * called "<tt>system.properties</tt>". The installation directory of Felix is assumed to be the parent directory
+     * of the <tt>felix.jar</tt> file as found on the system class path property. The precise file from which to load
+     * system properties can be set by initializing the "<tt>felix.system.properties</tt>" system property to an
      * arbitrary URL.
      * </p>
-     *
-     * @param karafBase the karaf base folder
+     * 
+     * @param karafBase
+     *            the karaf base folder
      */
     protected static void loadSystemProperties(File karafBase) {
         // The system properties file is either specified by a system
@@ -747,8 +726,7 @@ public class KarafMain {
         try {
             File file = new File(new File(karafBase, "etc"), SYSTEM_PROPERTIES_FILE_NAME);
             propURL = file.toURI().toURL();
-        }
-        catch (MalformedURLException ex) {
+        } catch (MalformedURLException ex) {
             System.err.print("Main: " + ex);
             return;
         }
@@ -760,25 +738,23 @@ public class KarafMain {
             is = propURL.openConnection().getInputStream();
             props.load(is);
             is.close();
-        }
-        catch (FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             // Ignore file not found.
-        }
-        catch (Exception ex) {
-            System.err.println(
-                    "Main: Error loading system properties from " + propURL);
+        } catch (Exception ex) {
+            System.err.println("Main: Error loading system properties from " + propURL);
             System.err.println("Main: " + ex);
             try {
-                if (is != null) is.close();
-            }
-            catch (IOException ex2) {
+                if (is != null) {
+                    is.close();
+                }
+            } catch (IOException ex2) {
                 // Nothing we can do.
             }
             return;
         }
 
         // Perform variable substitution on specified properties.
-        for (Enumeration e = props.propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = props.propertyNames(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
             String value = System.getProperty(name, props.getProperty(name));
             System.setProperty(name, substVars(value, name, null, null));
@@ -787,21 +763,18 @@ public class KarafMain {
 
     /**
      * <p>
-     * Loads the configuration properties in the configuration property file
-     * associated with the framework installation; these properties
-     * are accessible to the framework and to bundles and are intended
-     * for configuration purposes. By default, the configuration property
-     * file is located in the <tt>conf/</tt> directory of the Felix
-     * installation directory and is called "<tt>config.properties</tt>".
-     * The installation directory of Felix is assumed to be the parent
-     * directory of the <tt>felix.jar</tt> file as found on the system class
-     * path property. The precise file from which to load configuration
-     * properties can be set by initializing the "<tt>felix.config.properties</tt>"
-     * system property to an arbitrary URL.
+     * Loads the configuration properties in the configuration property file associated with the framework
+     * installation; these properties are accessible to the framework and to bundles and are intended for configuration
+     * purposes. By default, the configuration property file is located in the <tt>conf/</tt> directory of the Felix
+     * installation directory and is called "<tt>config.properties</tt>". The installation directory of Felix is
+     * assumed to be the parent directory of the <tt>felix.jar</tt> file as found on the system class path property.
+     * The precise file from which to load configuration properties can be set by initializing the "
+     * <tt>felix.config.properties</tt>" system property to an arbitrary URL.
      * </p>
-     *
+     * 
      * @return A <tt>Properties</tt> instance or <tt>null</tt> if there was an error.
-     * @throws Exception if something wrong occurs
+     * @throws Exception
+     *             if something wrong occurs
      */
     private Properties loadConfigProperties() throws Exception {
         // See if the property URL was specified as a property.
@@ -814,20 +787,17 @@ public class KarafMain {
             }
             File file = new File(etcFolder, CONFIG_PROPERTIES_FILE_NAME);
             configPropURL = file.toURI().toURL();
-        }
-        catch (MalformedURLException ex) {
+        } catch (MalformedURLException ex) {
             System.err.print("Main: " + ex);
             return null;
         }
 
-
         Properties configProps = loadPropertiesFile(configPropURL, false);
 
         // Perform variable substitution for system properties.
-        for (Enumeration e = configProps.propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = configProps.propertyNames(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
-            configProps.setProperty(name,
-                    substVars(configProps.getProperty(name), name, null, configProps));
+            configProps.setProperty(name, substVars(configProps.getProperty(name), name, null, configProps));
         }
 
         return configProps;
@@ -863,7 +833,8 @@ public class KarafMain {
             File baseSystemRepo = new File(karafBase, defaultRepo);
             File homeSystemRepo = new File(karafHome, defaultRepo);
             if (!baseSystemRepo.exists() && !homeSystemRepo.exists()) {
-                throw new FileNotFoundException("system repos not found: " + baseSystemRepo.getAbsolutePath() + " " + homeSystemRepo.getAbsolutePath());
+                throw new FileNotFoundException("system repos not found: " + baseSystemRepo.getAbsolutePath() + " "
+                        + homeSystemRepo.getAbsolutePath());
             }
             bundleDirs.add(baseSystemRepo);
             bundleDirs.add(homeSystemRepo);
@@ -878,9 +849,9 @@ public class KarafMain {
                     if (location != null) {
                         File f;
                         if (karafBase.equals(karafHome)) {
-                        	f = new File(karafHome, location);
+                            f = new File(karafHome, location);
                         } else {
-                        	f = new File(karafBase, location);
+                            f = new File(karafBase, location);
                         }
                         if (f.exists() && f.isDirectory()) {
                             bundleDirs.add(f);
@@ -907,13 +878,11 @@ public class KarafMain {
             is = configPropURL.openConnection().getInputStream();
             configProps.load(is);
             is.close();
-        }
-        catch (FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             if (failIfNotFound) {
                 throw ex;
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             System.err.println("Error loading config properties from " + configPropURL);
             System.err.println("Main: " + ex);
             return configProps;
@@ -922,8 +891,7 @@ public class KarafMain {
                 if (is != null) {
                     is.close();
                 }
-            }
-            catch (IOException ex2) {
+            } catch (IOException ex2) {
                 // Nothing we can do.
             }
         }
@@ -939,12 +907,11 @@ public class KarafMain {
                         Properties props = loadPropertiesFile(url, true);
                         configProps.putAll(props);
                     }
-                }
-                while (location != null);
+                } while (location != null);
             }
             configProps.remove(INCLUDES_PROPERTY);
         }
-        for (Enumeration e = configProps.propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = configProps.propertyNames(); e.hasMoreElements();) {
             Object key = e.nextElement();
             if (key instanceof String) {
                 String v = configProps.getProperty((String) key);
@@ -955,25 +922,24 @@ public class KarafMain {
     }
 
     protected static void copySystemProperties(Properties configProps) {
-        for (Enumeration e = System.getProperties().propertyNames();
-             e.hasMoreElements();) {
+        for (Enumeration<?> e = System.getProperties().propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
-            if (key.startsWith("felix.") ||
-                    key.startsWith("karaf.") ||
-                    key.startsWith("org.osgi.framework.")) {
+            if (key.startsWith("felix.") || key.startsWith("karaf.") || key.startsWith("org.osgi.framework.")) {
                 configProps.setProperty(key, System.getProperty(key));
             }
         }
     }
-    
+
     private ClassLoader createClassLoader(Properties configProps) throws Exception {
-    	String framework = configProps.getProperty(KARAF_FRAMEWORK);
+        String framework = configProps.getProperty(KARAF_FRAMEWORK);
         if (framework == null) {
-            throw new IllegalArgumentException("Property " + KARAF_FRAMEWORK + " must be set in the etc/" + CONFIG_PROPERTIES_FILE_NAME + " configuration file");
+            throw new IllegalArgumentException("Property " + KARAF_FRAMEWORK + " must be set in the etc/"
+                    + CONFIG_PROPERTIES_FILE_NAME + " configuration file");
         }
         String bundle = configProps.getProperty(KARAF_FRAMEWORK + "." + framework);
         if (bundle == null) {
-            throw new IllegalArgumentException("Property " + KARAF_FRAMEWORK + "." + framework + " must be set in the etc/" + CONFIG_PROPERTIES_FILE_NAME + " configuration file");
+            throw new IllegalArgumentException("Property " + KARAF_FRAMEWORK + "." + framework
+                    + " must be set in the etc/" + CONFIG_PROPERTIES_FILE_NAME + " configuration file");
         }
         File bundleFile = new File(karafBase, bundle);
         if (!bundleFile.exists()) {
@@ -984,7 +950,7 @@ public class KarafMain {
         }
 
         List<URL> urls = new ArrayList<URL>();
-        urls.add( bundleFile.toURI().toURL() );
+        urls.add(bundleFile.toURI().toURL());
         File[] libs = new File(karafHome, "lib").listFiles();
         if (libs != null) {
             for (File f : libs) {
@@ -999,12 +965,16 @@ public class KarafMain {
 
     /**
      * Process properties to customize default felix behavior
-     *
-     * @param configProps properties loaded from etc/config.properties
-     * @param startupProps properties loaded from etc/startup.properties
-     * @param bundleDirs location to load bundles from (usually system/)
+     * 
+     * @param configProps
+     *            properties loaded from etc/config.properties
+     * @param startupProps
+     *            properties loaded from etc/startup.properties
+     * @param bundleDirs
+     *            location to load bundles from (usually system/)
      */
-    private static void processConfigurationProperties(Properties configProps, Properties startupProps, List<File> bundleDirs) throws Exception {
+    private static void processConfigurationProperties(Properties configProps, Properties startupProps,
+            List<File> bundleDirs) throws Exception {
         if (bundleDirs == null) {
             return;
         }
@@ -1052,12 +1022,14 @@ public class KarafMain {
                         levels.put(level, sb);
                     }
                     try {
-                        sb.append("\"").append(file.toURI().toURL().toString()).append("|").append(name).append("\" ");
+                        sb.append("\"").append(file.toURI().toURL().toString()).append("|").append(name)
+                                .append("\" ");
                     } catch (MalformedURLException e) {
                         System.err.print("Ignoring " + file.toString() + " (" + e + ")");
                     }
                 } else {
-                    System.err.println("Bundle listed in " + STARTUP_PROPERTIES_FILE_NAME + " configuration not found: " + name);
+                    System.err.println("Bundle listed in " + STARTUP_PROPERTIES_FILE_NAME
+                            + " configuration not found: " + name);
                     hasErrors = true;
                 }
             }
@@ -1114,28 +1086,28 @@ public class KarafMain {
 
     /**
      * <p>
-     * This method performs property variable substitution on the
-     * specified value. If the specified value contains the syntax
-     * <tt>${&lt;prop-name&gt;}</tt>, where <tt>&lt;prop-name&gt;</tt>
-     * refers to either a configuration property or a system property,
-     * then the corresponding property value is substituted for the variable
-     * placeholder. Multiple variable placeholders may exist in the
-     * specified value as well as nested variable placeholders, which
-     * are substituted from inner most to outer most. Configuration
-     * properties override system properties.
+     * This method performs property variable substitution on the specified value. If the specified value contains the
+     * syntax <tt>${&lt;prop-name&gt;}</tt>, where <tt>&lt;prop-name&gt;</tt> refers to either a configuration property
+     * or a system property, then the corresponding property value is substituted for the variable placeholder.
+     * Multiple variable placeholders may exist in the specified value as well as nested variable placeholders, which
+     * are substituted from inner most to outer most. Configuration properties override system properties.
      * </p>
-     *
-     * @param val         The string on which to perform property substitution.
-     * @param currentKey  The key of the property being evaluated used to
-     *                    detect cycles.
-     * @param cycleMap    Map of variable references used to detect nested cycles.
-     * @param configProps Set of configuration properties.
+     * 
+     * @param val
+     *            The string on which to perform property substitution.
+     * @param currentKey
+     *            The key of the property being evaluated used to
+     *            detect cycles.
+     * @param cycleMap
+     *            Map of variable references used to detect nested cycles.
+     * @param configProps
+     *            Set of configuration properties.
      * @return The value of the specified string after system property substitution.
-     * @throws IllegalArgumentException If there was a syntax error in the
-     *                                  property placeholder syntax or a recursive variable reference.
+     * @throws IllegalArgumentException
+     *             If there was a syntax error in the
+     *             property placeholder syntax or a recursive variable reference.
      */
-    public static String substVars(String val, String currentKey,
-                                    Map<String, String> cycleMap, Properties configProps)
+    public static String substVars(String val, String currentKey, Map<String, String> cycleMap, Properties configProps)
             throws IllegalArgumentException {
         // If there is currently no cycle map, then create
         // one for detecting cycles for this invocation.
@@ -1174,31 +1146,24 @@ public class KarafMain {
         }
         // At this point, we found a stop delimiter without a start,
         // so throw an exception.
-        else if (((startDelim < 0) || (startDelim > stopDelim))
-                && (stopDelim >= 0)) {
-            throw new IllegalArgumentException(
-                    "stop delimiter with no start delimiter: "
-                            + val);
+        else if (((startDelim < 0) || (startDelim > stopDelim)) && (stopDelim >= 0)) {
+            throw new IllegalArgumentException("stop delimiter with no start delimiter: " + val);
         }
 
         // At this point, we have found a variable placeholder so
         // we must perform a variable substitution on it.
         // Using the start and stop delimiter indices, extract
         // the first, deepest nested variable placeholder.
-        String variable =
-                val.substring(startDelim + DELIM_START.length(), stopDelim);
+        String variable = val.substring(startDelim + DELIM_START.length(), stopDelim);
 
         // Verify that this is not a recursive variable reference.
         if (cycleMap.get(variable) != null) {
-            throw new IllegalArgumentException(
-                    "recursive variable reference: " + variable);
+            throw new IllegalArgumentException("recursive variable reference: " + variable);
         }
 
         // Get the value of the deepest nested variable placeholder.
         // Try to configuration properties first.
-        String substValue = (configProps != null)
-                ? configProps.getProperty(variable, null)
-                : null;
+        String substValue = (configProps != null) ? configProps.getProperty(variable, null) : null;
         if (substValue == null) {
             // Ignore unknown property values.
             substValue = System.getProperty(variable, "");
@@ -1212,8 +1177,7 @@ public class KarafMain {
         // Append the leading characters, the substituted value of
         // the variable, and the trailing characters to get the new
         // value.
-        val = val.substring(0, startDelim)
-                + substValue
+        val = val.substring(0, startDelim) + substValue
                 + val.substring(stopDelim + DELIM_STOP.length(), val.length());
 
         // Now perform substitution again, since there could still
@@ -1226,7 +1190,7 @@ public class KarafMain {
 
     /**
      * Retrieve the arguments used when launching Karaf
-     *
+     * 
      * @return the arguments of the main karaf process
      */
     public String[] getArgs() {
@@ -1244,7 +1208,7 @@ public class KarafMain {
     public Framework getFramework() {
         return framework;
     }
-    
+
     public void lock(Properties props) {
         try {
             if (Boolean.parseBoolean(props.getProperty(PROPERTY_USE_LOCK, "true"))) {
@@ -1300,7 +1264,6 @@ public class KarafMain {
         sl.setStartLevel(level);
     }
 
-
     private Random random = null;
     private ServerSocket shutdownSocket;
 
@@ -1351,14 +1314,14 @@ public class KarafMain {
     }
 
     public void setAdditionalProperties(Properties additionalProperties) {
-		this.additionalProperties = additionalProperties;
-	}
+        this.additionalProperties = additionalProperties;
+    }
 
-	public Properties getAdditionalProperties() {
-		return additionalProperties;
-	}
+    public Properties getAdditionalProperties() {
+        return additionalProperties;
+    }
 
-	private class ShutdownSocketThread extends Thread {
+    private class ShutdownSocketThread extends Thread {
 
         private final String shutdown;
 
@@ -1366,6 +1329,7 @@ public class KarafMain {
             this.shutdown = shutdown;
         }
 
+        @Override
         public void run() {
             try {
                 while (true) {
@@ -1374,11 +1338,10 @@ public class KarafMain {
                     InputStream stream = null;
                     try {
                         socket = shutdownSocket.accept();
-                        socket.setSoTimeout(10 * 1000);  // Ten seconds
+                        socket.setSoTimeout(10 * 1000); // Ten seconds
                         stream = socket.getInputStream();
                     } catch (AccessControlException ace) {
-                        LOG.log(Level.WARNING, "Karaf shutdown socket: security exception: "
-                                           + ace.getMessage(), ace);
+                        LOG.log(Level.WARNING, "Karaf shutdown socket: security exception: " + ace.getMessage(), ace);
                         continue;
                     } catch (IOException e) {
                         LOG.log(Level.SEVERE, "Karaf shutdown socket: accept: ", e);
@@ -1402,7 +1365,7 @@ public class KarafMain {
                             LOG.log(Level.WARNING, "Karaf shutdown socket:  read: ", e);
                             ch = -1;
                         }
-                        if (ch < 32) {  // Control character or EOF terminates loop
+                        if (ch < 32) { // Control character or EOF terminates loop
                             break;
                         }
                         command.append((char) ch);
@@ -1423,8 +1386,8 @@ public class KarafMain {
                         framework.stop();
                         break;
                     } else {
-                        LOG.log(Level.WARNING, "Karaf shutdown socket:  Invalid command '" +
-                                           command.toString() + "' received");
+                        LOG.log(Level.WARNING, "Karaf shutdown socket:  Invalid command '" + command.toString()
+                                + "' received");
                     }
                 }
             } catch (Exception e) {
