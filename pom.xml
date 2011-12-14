@@ -28,13 +28,13 @@
 
 	<modules>
 		<module>component/java</module>
-		<module>component/karaf</module>
+<!--		<module>component/karaf</module>-->
 
 
 		<module>sample/jar-sample</module>
-		<module>sample/war-sample</module>
+<!--		<module>sample/war-sample</module>
 		<module>sample/osgi-sample</module>
-		<module>sample/karaf-sample</module>
+		<module>sample/karaf-sample</module>-->
 	</modules>
 
 	<developers>
