@@ -53,6 +53,12 @@
 			<comments>Apache License Version 2.0</comments>
 		</license>
 	</licenses>
+	
+	<scm>
+		<connection>scm:git:git://github.com/awired/bootstrap.git</connection>
+		<developerConnection>scm:git:git@github.com:awired/bootstrap.git</developerConnection>
+		<url>http://github.com/awired/bootstrap</url>
+	</scm>
 
 	<dependencyManagement>
 		<dependencies>
