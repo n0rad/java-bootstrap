@@ -30,7 +30,7 @@
 		<module>component/java</module>
 		<module>component/karaf</module>
 
-		
+
 		<module>sample/jar-sample</module>
 		<module>sample/war-sample</module>
 		<module>sample/osgi-sample</module>
@@ -54,4 +54,13 @@
 		</license>
 	</licenses>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>net.awired.bootstrap</groupId>
+				<artifactId>bootstrap-java</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>
