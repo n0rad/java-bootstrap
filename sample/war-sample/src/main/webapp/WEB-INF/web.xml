@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
     <listener>
-        <listener-class>net.awired.bootstrap.sample.war.Listener</listener-class>
+        <listener-class>fr.norad.bootstrap.sample.war.Listener</listener-class>
     </listener>
 
 
