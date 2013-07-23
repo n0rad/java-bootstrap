@@ -23,6 +23,11 @@
 			<artifactId>snappy-java</artifactId>
 			<version>1.1.0-M2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.fusesource.jansi</groupId>
+			<artifactId>jansi</artifactId>
+			<version>1.11</version>
+		</dependency>
 	</dependencies>
 
 	<build>

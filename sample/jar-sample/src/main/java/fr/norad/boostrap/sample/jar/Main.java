@@ -19,6 +19,9 @@ package fr.norad.boostrap.sample.jar;
 import net.awired.aclm.argument.CliArgumentManager;
 import net.awired.aclm.argument.args.CliOneParamArgument;
 import net.awired.aclm.param.CliParamString;
+import org.fusesource.jansi.Ansi;
+import org.fusesource.jansi.Ansi.Color;
+import org.fusesource.jansi.AnsiConsole;
 import org.xerial.snappy.Snappy;
 
 public class Main {
@@ -41,6 +44,12 @@ public class Main {
 
         System.out.println("type argument value is : " + am.typeArgument.getParamOneValue());
 
+        // ansi native
+        AnsiConsole.systemInstall();
+        Ansi reset = Ansi.ansi().fg(Color.RED).a("Salut!").reset();
+        System.out.println(reset.toString());
+
+        // snappy native
         Snappy.maxCompressedLength(4242);
         Snappy.getNativeLibraryVersion();
         System.out.println("OK!!");
