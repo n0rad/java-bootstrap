@@ -14,9 +14,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>net.awired.aclm</groupId>
-			<artifactId>aclm</artifactId>
-			<version>0.2</version>
+			<groupId>fr.norad.typed.command.line.parser</groupId>
+			<artifactId>typed-command-line-parser</artifactId>
+			<version>0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.xerial.snappy</groupId>

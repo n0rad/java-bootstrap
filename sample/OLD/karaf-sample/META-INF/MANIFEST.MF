@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Built-By: n0
+Tool: Bnd-1.43.0
+Bundle-Name: Awired Bootstrap - Sample - Karaf
+Project-Name: Awired Bootstrap - Sample - Karaf
+Created-By: Apache Maven Bundle Plugin
+Copyright: Awired Network
+Project-Creator: Awired Network
+Bundle-Vendor: Awired Network
+Build-Jdk: 1.6.0_26
+Bundle-Version: 1.0.0.SNAPSHOT
+Project-Version: 1.0-SNAPSHOT
+Bnd-LastModified: 1323903230154
+Bundle-ManifestVersion: 2
+Project-CreatorId: net.awired.bootstrap
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-Description: Bootstrap for applications
+Bundle-DocURL: http://awired.net/
+Bundle-SymbolicName: net.awired.bootstrap.sample-karaf
+Project-Website: https://github.com/awired/bootstrap/bootstrap-sample-
+ karaf
+

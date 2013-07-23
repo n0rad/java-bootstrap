@@ -16,13 +16,13 @@
  */
 package fr.norad.boostrap.sample.jar;
 
-import net.awired.aclm.argument.CliArgumentManager;
-import net.awired.aclm.argument.args.CliOneParamArgument;
-import net.awired.aclm.param.CliParamString;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Color;
 import org.fusesource.jansi.AnsiConsole;
 import org.xerial.snappy.Snappy;
+import fr.norad.typed.command.line.parser.argument.CliArgumentManager;
+import fr.norad.typed.command.line.parser.argument.args.CliOneParamArgument;
+import fr.norad.typed.command.line.parser.param.CliParamString;
 
 public class Main {
 
@@ -40,7 +40,7 @@ public class Main {
 
     public Main(String[] args) {
         ArgumentManager am = new ArgumentManager();
-        am.parse(args);
+        am.parseWithSuccess(args);
 
         System.out.println("type argument value is : " + am.typeArgument.getParamOneValue());
 
